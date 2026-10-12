@@ -1,0 +1,241 @@
+
+@import "../../public/assets/scss/theme.scss";
+.notification-card {
+  transition: all 0.3s ease;
+}
+
+.notification-card.deleting {
+  opacity: 0;
+  transform: translateX(40px);
+}
+
+.nxl-content-sidebar-item .nav-link.active {
+  background-color: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+
+// task calender css start 
+.calendar-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header-top {
+  flex-shrink: 0;
+}
+
+.calendar-week-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f1f3f5;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.calendar-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-cell {
+  border: 1px solid #eaeaea;
+  min-height: 140px;
+  padding: 6px;
+  background: #fff;
+}
+
+.calendar-cell.muted {
+  background: #f8f9fa;
+  opacity: 0.6;
+}
+
+.calendar-date {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.calendar-date.today {
+  background: #0d6efd;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.calendar-task {
+  font-size: 11px;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-date-section {
+  padding: 10px;
+  border-top: 1px solid #eaeaea;
+}
+
+.no-date-task {
+  padding: 6px 8px;
+  background: #f8f9fa;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.bg-custom-light-blue {
+    background-color: #ECF8FE;
+}
+
+// task calender css end 
+
+//Dashboard client/leads start
+.fade-in {
+  animation: fadeInUp 0.25s ease-in-out;
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    // transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    // transform: translateY(0);
+  }
+}
+.row-animate {
+  animation: fadeInUp 0.3s ease-in-out;
+}
+
+//Dashboard client/leads end
+
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.page-btn,
+.page-number {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled),
+.page-number:hover {
+  background: #f3f4f6;
+}
+
+.page-number.active {
+  background: #3454d1;
+  color: #fff;
+  border-color: #3454d1;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.table-body-transition {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.table-fade-out {
+  opacity: 0;
+  // transform: translateY(8px);
+}
+
+.table-fade-in {
+  opacity: 1;
+  // transform: translateY(0);
+}
+
+
+//Notification
+.notification-wrapper {
+  max-width: 700px;
+  margin: auto;
+}
+
+.notification-item {
+  background: #ffffff;
+  border: 1px solid #f1f1f1;
+  transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.notification-unread {
+  background: #eef2ff; /* light blue like design */
+}
+
+.notification-avatar img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.notification-content p {
+  font-size: 14px;
+}
+
+.notification-content small {
+  font-size: 12px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.placeholder {
+  animation: placeholder-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes placeholder-glow {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}

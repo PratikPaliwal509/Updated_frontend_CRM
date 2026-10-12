@@ -1,0 +1,293 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import PageHeader from '@/components/shared/pageHeader/PageHeader';
+import RolesEditHeader from '@/components//Roles/RolesEditHeader';
+import RolesEditContent from '@/components/Roles/RolesEditContent';
+import Swal from 'sweetalert2';
+import { verifyPagePermission } from '@/utils/verifyPagePermission';
+import { API_BASE_URL } from '../config/api';
+
+/* ============================ 
+   VIEW SCOPES CONFIG
+============================ */
+const VIEW_SCOPES = {
+  clients: ['all', 'agency', 'department', 'team', 'assigned', 'own'],
+  projects: ['all', 'agency', 'department', 'team', 'assigned', 'own'],
+  tasks: ['all', 'agency', 'department', 'team', 'assigned', 'own', 'client'],
+  teams: ['all', 'agency', 'department', 'team', 'own'],
+  departments: ['all', 'agency', 'department', 'team', 'own'],
+  leads: ['agency', 'assigned', 'own'],
+};
+
+/* ============================ 
+   PERMISSION CONFIG
+============================ */
+const permissionPages = [
+  { key: 'dashboard', label: 'Dashboard', actions: ['view'] },
+
+  { key: 'applications', label: 'Applications', actions: ['view'] },
+
+  {
+    key: 'tasks',
+    label: 'Tasks',
+    actions: ['view', 'create', 'edit', 'delete', 'assign'],
+    viewScopes: VIEW_SCOPES.tasks,
+  },
+
+  {
+    key: 'notes',
+    label: 'Notes',
+    actions: ['view', 'create', 'edit', 'delete'],
+  },
+
+  {
+    key: 'timelogs',
+    label: 'Timelogs',
+    actions: ['view', 'create', 'edit', 'delete'],
+  },
+
+  {
+    key: 'storage',
+    label: 'Storage',
+    actions: ['view'],
+  },
+
+  {
+    key: 'clients',
+    label: 'Clients',
+    actions: ['view', 'create', 'edit', 'delete', 'assign'],
+    viewScopes: VIEW_SCOPES.clients,
+  },
+
+  {
+    key: 'projects',
+    label: 'Projects',
+    actions: ['view', 'create', 'edit', 'delete'],
+    viewScopes: VIEW_SCOPES.projects,
+  },
+
+  {
+    key: 'teams',
+    label: 'Teams',
+    actions: ['view', 'create', 'edit', 'delete'],
+    viewScopes: VIEW_SCOPES.teams,
+  },
+
+  {
+    key: 'departments',
+    label: 'Departments',
+    actions: ['view', 'create', 'edit', 'delete'],
+    viewScopes: VIEW_SCOPES.departments,
+  },
+
+  { key: 'leads', label: 'Leads', actions: ['view', 'create', 'edit', 'delete'], viewScopes: VIEW_SCOPES.leads },
+
+  { key: 'proposals', label: 'Proposals', actions: ['view', 'create', 'edit', 'delete'] },
+
+  { key: 'invoices', label: 'Invoices & payments', actions: ['view', 'create', 'edit', 'delete'] },
+
+
+  {
+    key: 'users',
+    label: 'Users',
+    actions: ['view', 'create', 'edit', 'delete'],
+  },
+
+  {
+    key: 'roles',
+    label: 'Roles',
+    actions: ['view', 'create', 'edit', 'delete'],
+  },
+
+  {
+    key: 'settings',
+    label: 'Settings',
+    actions: ['view'],
+  },
+
+  {
+    key: 'help',
+    label: 'Help Center',
+    actions: ['view'],
+  },
+
+  {
+    key: 'authentication',
+    label: 'Authentication',
+    actions: ['view'],
+  },
+];
+const RolesEdit = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    role_name: '',
+    role_description: '',
+    is_system_role: false,
+    permissions: {},
+  });
+const isApplicationEnabled = formData.permissions?.applications?.view === true;
+  /* ============================ 
+     PAGE PERMISSION CHECK
+  ============================= */
+  useEffect(() => {
+    verifyPagePermission('roles', 'edit', navigate);
+  }, []);
+
+  /* ============================ 
+     FETCH ROLE DATA
+  ============================= */
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+
+        const response = await fetch(`${API_BASE_URL}/api/roles/${id}`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch role');
+
+        const data = await response.json();
+
+        setFormData({
+          role_name: data.data.role_name || '',
+          role_description: data.data.role_description || '',
+          is_system_role: data.data.is_system_role || false,
+          permissions: data.data.permissions || {},
+        });
+      } catch (error) {
+        console.error('Fetch role error', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRole();
+  }, [id]);
+
+  /* ============================ 
+     HANDLE INPUT CHANGE
+  ============================= */
+  const handleChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  /* ============================ 
+     TOGGLE PERMISSIONS
+  ============================= */
+const toggleActionPermission = (page, action) => {
+  setFormData(prev => {
+    const currentValue = prev.permissions?.[page]?.[action];
+    const newValue = !currentValue;
+
+    // 🔥 If applications is being toggled
+    if (page === "applications" && action === "view") {
+      return {
+        ...prev,
+        permissions: {
+          ...prev.permissions,
+          applications: { view: newValue },
+
+          // ❌ If turned OFF → CLEAR children بالكامل
+          ...(newValue
+            ? {}
+            : {
+                tasks: {},
+                notes: {},
+                timelogs: {},
+                storage: {},
+              }),
+        },
+      };
+    }
+
+    // ✅ Normal toggle
+    return {
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [page]: {
+          view: false,
+          create: false,
+          edit: false,
+          delete: false,
+          assign: false,
+          ...prev.permissions?.[page],
+          [action]: newValue,
+        },
+      },
+    };
+  });
+};
+  const handleViewScopeChange = (page, scope) => {
+    setFormData(prev => ({
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [page]: { ...prev.permissions?.[page], view: scope },
+      },
+    }));
+  };
+
+  /* ============================ 
+     UPDATE ROLE
+  ============================= */
+  const handleUpdate = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${API_BASE_URL}/api/roles/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData;
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Role Updated',
+        text: 'Role details updated successfully',
+        confirmButtonText: 'OK',
+      });
+
+      navigate(-1);
+    } catch (error) {
+      console.error('Update role error', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (<>
+    <PageHeader>
+      <RolesEditHeader loading={loading} onUpdate={handleUpdate} />
+    </PageHeader>
+    <div className="main-content">
+      <div className="row">
+        <RolesEditContent
+          formData={formData}
+          permissionPages={permissionPages}
+          onChange={handleChange}
+          onToggleAction={toggleActionPermission}
+          onViewScopeChange={handleViewScopeChange}
+           isApplicationEnabled={isApplicationEnabled}
+        />
+      </div>
+    </div>
+  </>
+  );
+};
+
+export default RolesEdit;

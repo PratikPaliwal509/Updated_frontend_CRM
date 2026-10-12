@@ -1,0 +1,102 @@
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { API_BASE_URL } from '../../config/api';
+
+const TabCompleted = ({ formData, resetForm }) => {
+  const [status, setStatus] = useState('idle')
+  const [error, setError] = useState(null)
+  const navigate = useNavigate()
+
+  const handleCreateProject = async () => {
+  setStatus('loading');
+  setError(null);
+
+  try {
+    const { start_date, end_date } = formData;
+
+    // ✅ Date Validation
+    if (
+      start_date &&
+      end_date &&
+      new Date(end_date) < new Date(start_date)
+    ) {
+
+      setError('End date cannot be before start date');
+      setStatus('error');
+      return; // ⛔ stop API call
+    }
+
+    const token = localStorage.getItem('token');
+
+    const res = await fetch(`${API_BASE_URL}/api/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create project');
+    }
+
+    setStatus('success');
+
+    resetForm && resetForm();
+
+    setTimeout(() => {
+      navigate(`/projects/view/${data.data.project_id}`);
+    }, 1000);
+
+  } catch (err) {
+    console.error(err);
+    setError(err.message);
+    setStatus('error');
+  }
+};
+
+  return (
+    <section className="step-body mt-4 text-center">
+      <img
+        src="/images/general/completed-steps.png"
+        alt="Completed"
+        className="img-fluid wd-300 mb-4"
+      />
+
+      {/* ✅ Dynamic Heading */}
+      <h4 className="fw-bold">
+        {status === 'success'
+          ? 'Project Created!'
+          : status === 'loading'
+          ? 'Creating Project...'
+          : status === 'error'
+          ? 'Something went wrong'
+          : 'Ready to Create Project'}
+      </h4>
+
+      {/* ✅ Dynamic Message */}
+      <p className="text-muted mt-2">
+        {status === 'error'
+          ? `Error: ${error}`
+          : status === 'success'
+          ? 'Your project is ready.'
+          : 'Click below to create your project.'}
+      </p>
+
+      <div className="d-flex justify-content-center gap-1 mt-5">
+        <button
+          className="btn btn-primary"
+          onClick={handleCreateProject}
+          disabled={status === 'loading'}
+        >
+          {status === 'loading' ? 'Creating...' : 'Create Project'}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+export default TabCompleted
