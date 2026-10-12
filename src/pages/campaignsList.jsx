@@ -6,11 +6,14 @@ import CampaignsTable from "@/components/metaAds/CampaignsTable";
 import { useNavigate } from "react-router-dom";
 import { verifyPagePermission } from "@/utils/verifyPagePermission";
 import GenerateAdsReportModal from "@/components/metaAds/GenerateAdsReportModal";
+import { AdAccountPicker, AdConnectHint, useAdAccounts } from "@/components/meta/AdAccountPicker";
 const CampaignsList = () => {
     const navigate = useNavigate();
     const [filter, setFilter] = useState("all");
     const [campaigns, setCampaigns] = useState([]);
     const [showReportModal, setShowReportModal] = useState(false);
+    // the workspace's own ad account (Settings → Integrations); sent as X-Meta-Ad-Account
+    const ads = useAdAccounts();
     // useEffect(() => {
     //     verifyPagePermission("meta_ads", "view", navigate);
     // }, [navigate]);
@@ -242,6 +245,17 @@ const CampaignsList = () => {
     return (
         <>
             <PageHeader>
+                <div className="me-2">
+                    <AdAccountPicker
+                        accounts={ads.accounts}
+                        selected={ads.selected}
+                        onChange={(id) => {
+                            if (Number(id) === ads.selected) return;
+                            ads.setSelected(id);
+                            setCampaigns([]);
+                        }}
+                    />
+                </div>
                 <CampaignsHeader
                     onExport={handleExport}
                     onFilter={setFilter}
@@ -251,10 +265,15 @@ const CampaignsList = () => {
 
             <div className="main-content">
                 <div className="row">
-                    <CampaignsTable
-                        campaigns={filteredCampaigns}
-                        setCampaigns={setCampaigns}
-                    />
+                    {ads.loading ? null : ads.notConnected || ads.error ? (
+                        <AdConnectHint error={ads.error} />
+                    ) : (
+                        <CampaignsTable
+                            key={ads.selected || "none"}
+                            campaigns={filteredCampaigns}
+                            setCampaigns={setCampaigns}
+                        />
+                    )}
                 </div>
             </div>
 

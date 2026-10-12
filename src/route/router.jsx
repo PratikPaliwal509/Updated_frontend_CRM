@@ -1,14 +1,11 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "../layout/root";
 import Home from "../pages/home";
-import Analytics from "../pages/analytics";
-import ReportsSales from "../pages/reports-sales";
 // import ReportsLeads from "../pages/reports-leads";
 import ReportsProject from "../pages/projectMgmt/ProjectsReportPage"; // template page replaced by the real projects report
 import AppsChat from "../pages/apps-chat";
 import LayoutApplications from "../layout/layoutApplications";
 import AppsEmail from "../pages/apps-email";
-import ReportsTimesheets from "../pages/reports-timesheets";
 import LoginCover from "../pages/login-cover";
 import AppsTasks from "../pages/apps-tasks";
 import AppsNotes from "../pages/apps-notes";
@@ -112,6 +109,12 @@ import ComposePostPage from "../pages/meta/ComposePostPage";
 import ScheduledPostsPage from "../pages/meta/ScheduledPostsPage";
 import InboxPage from "../pages/meta/InboxPage";
 import IntegrationsPage from "../pages/meta/IntegrationsPage";
+import AdsInsightsPage from "../pages/meta/AdsInsightsPage";
+import AdChangesPage from "../pages/meta/AdChangesPage";
+import ReportsPage from "../pages/reports/ReportsPage";
+import ReportBuilderPage from "../pages/reports/ReportBuilderPage";
+import ReportRunPage from "../pages/reports/ReportRunPage";
+import SharedReportPage from "../pages/reports/SharedReportPage";
 import MetaCallbackPage from "../pages/meta/MetaCallbackPage";
 import DataDeletionStatusPage from "../pages/meta/DataDeletionStatusPage";
 import MetaFormLeads from "../pages/metaFormLeads";
@@ -196,12 +199,14 @@ export const router = createBrowserRouter([
                 element: <AllNotifications />
             },
             {
+                // demo-data template page removed (F-129) -> the real dashboard
                 path: "/dashboards/analytics",
-                element: <Analytics />
+                element: <Navigate to="/" replace />
             },
             {
+                // demo-data template page removed (F-129) -> client reports
                 path: "/reports/sales",
-                element: <ReportsSales />
+                element: <Navigate to="/reports" replace />
             },
             // {
             //     path: "/reports/leads",
@@ -216,8 +221,9 @@ export const router = createBrowserRouter([
                 element: <ReportsProject />
             },
             {
+                // demo-data template page removed (F-129) -> projects report (hours per project)
                 path: "/reports/timesheets",
-                element: <ReportsTimesheets />
+                element: <Navigate to="/reports/project" replace />
             },
             // Client Management: sales pipeline, customers, proposals, invoices, payments
             { path: "/leads/list", element: <LeadsPage /> },
@@ -403,6 +409,30 @@ export const router = createBrowserRouter([
                 element: <CampaignsList />
             },
             {
+                path: "/reports",
+                element: <ReportsPage />
+            },
+            {
+                path: "/reports/new",
+                element: <ReportBuilderPage />
+            },
+            {
+                path: "/reports/edit/:id",
+                element: <ReportBuilderPage />
+            },
+            {
+                path: "/reports/runs/:id",
+                element: <ReportRunPage />
+            },
+            {
+                path: "/meta-ads/insights",
+                element: <AdsInsightsPage />
+            },
+            {
+                path: "/meta-ads/changes",
+                element: <AdChangesPage />
+            },
+            {
                 path: "/meta-ads/campaigns/create",
                 element: <CampaignCreate  />
             },
@@ -458,10 +488,10 @@ export const router = createBrowserRouter([
             },
 
 
-            // {
-            //     path: "/meta-ads/ads/:adId/creatives/create",
-            //     element: <CreativeCreate   />
-            // },
+            {
+                path: "/meta-ads/ads/:adId/creatives/create",
+                element: <CreativeCreate />
+            },
             {
                 path: "/meta-ads/creatives/edit/:id",
                 element: <CreativeEdit   />
@@ -652,6 +682,10 @@ export const router = createBrowserRouter([
             {
                 path: "/meta/data-deletion",
                 element: <DataDeletionStatusPage />
+            },
+            {
+                path: "/shared/report/:token",
+                element: <SharedReportPage />
             },
             {
                 path: "/onboarding",

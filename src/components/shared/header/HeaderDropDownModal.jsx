@@ -20,10 +20,8 @@ const menuData = [
         name: 'reports',
         icon: 'feather-cast',
         subMenu: [
-            { name: 'Sales Report', path: '/reports/sales' },
-            { name: 'Leads Report', path: '/reports/leads' },
+            { name: 'Client Reports', path: '/reports' },
             { name: 'Project Report', path: '/reports/project' },
-            { name: 'Timesheets Report', path: '/reports/timesheets' },
         ],
     },
     {

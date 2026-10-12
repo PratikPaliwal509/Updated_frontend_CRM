@@ -27,9 +27,13 @@ const MetaCallbackPage = () => {
         }
         api('/api/integrations/meta/callback', { method: 'POST', body: { code, state } })
             .then((r) => {
-                toast.success(`Facebook connected - ${r.pages} Page${r.pages === 1 ? '' : 's'} available`)
-                if (r.missing_scopes?.length) toast.warn(`Some permissions were not granted: ${r.missing_scopes.join(', ')}. Related features will not work until you reconnect and allow them.`, { autoClose: 12000 })
-                navigate('/settings/integrations', { replace: true })
+                const ads = r.ad_accounts || 0
+                toast.success(`Facebook connected - ${r.pages} Page${r.pages === 1 ? '' : 's'}${ads ? ` and ${ads} ad account${ads === 1 ? '' : 's'}` : ''} found`)
+                if (r.declined_scopes?.length) toast.warn(`You declined: ${r.declined_scopes.join(', ')}. Related features will not work until you re-request them in Settings → Integrations.`, { autoClose: 12000 })
+                else if (r.missing_scopes?.length) toast.warn(`Some permissions were not granted: ${r.missing_scopes.join(', ')}. Related features will not work until you reconnect and allow them.`, { autoClose: 12000 })
+                // next step: choose the Pages / ad accounts this workspace uses
+                const selection = r.selection_required ? { connection_id: r.connection_id, pages: r.discovered?.pages || [], ad_accounts: r.discovered?.ad_accounts || [] } : null
+                navigate('/settings/integrations', { replace: true, state: selection ? { selection } : null })
             })
             .catch((e) => {
                 setMessage(e.message)

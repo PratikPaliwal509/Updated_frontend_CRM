@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Table from "@/components/shared/table/Table";
 import Dropdown from "@/components/shared/Dropdown";
 import Loader from "../loader";
@@ -14,8 +14,7 @@ import {
     useNavigate
 } from "react-router-dom";
 
-import { toast } from "react-toastify";
-import { API_BASE_URL } from '../../config/api';
+import { usePagedList, changeStatus, useAdCurrency, formatMinor } from "../meta/adsApi";
 
 const AdSetsTable = ({
     campaignId,
@@ -25,147 +24,32 @@ const AdSetsTable = ({
 
     const navigate = useNavigate();
 
-    const [loading, setLoading] =
-        useState(true);
-
     const [updatingId, setUpdatingId] =
         useState(null);
+    const { currency } = useAdCurrency();
 
-    useEffect(() => {
+    // first page + "Load more" (Meta cursor paging, F-086); budgets kept in Meta minor units
+    const { loading, loadingMore, hasMore, loadMore } = usePagedList({
+        path: `/api/meta-ads/${campaignId}/adsets`,
+        enabled: !!campaignId,
+        setRows: setAdSets,
+        map: (adSet) => ({
+            id: adSet.id,
+            name: adSet.name,
+            budgetMinor: adSet.daily_budget || adSet.lifetime_budget || null,
+            budgetKind: adSet.daily_budget ? "daily" : adSet.lifetime_budget ? "lifetime" : null,
+            optimization: adSet.optimization_goal || "—",
+            status: adSet.status || "UNKNOWN",
+            createdAt: adSet.created_time ? new Date(adSet.created_time).toLocaleDateString() : "—"
+        })
+    });
 
-        const fetchAdSets = async () => {
-
-            try {
-
-                const token =
-                    localStorage.getItem("token");
-
-                const res = await fetch(
-                    `${API_BASE_URL}/api/meta-ads/${campaignId}/adsets`,
-                    {
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`,
-                            "Content-Type":
-                                "application/json"
-                        }
-                    }
-                );
-
-                const result =
-                    await res.json();
-
-                if (result.success) {
-
-                    const list =
-                        result.data?.data ||
-                        result.data ||
-                        [];
-
-                    const mapped =
-                        list.map((adSet) => ({
-                            id: adSet.id,
-                            name: adSet.name,
-                            budget:
-                                adSet.daily_budget ||
-                                adSet.lifetime_budget ||
-                                "—",
-                            optimization:
-                                adSet.optimization_goal ||
-                                "—",
-                            status:
-                                adSet.status ||
-                                "UNKNOWN",
-                            createdAt:
-                                adSet.created_time
-                                    ? new Date(
-                                        adSet.created_time
-                                    ).toLocaleDateString()
-                                    : "—"
-                        }));
-
-                    setAdSets(mapped);
-                }
-
-            } catch (error) {
-
-                console.error(error);
-
-                toast.error(
-                    "Failed to fetch ad sets"
-                );
-
-            } finally {
-
-                setLoading(false);
-
-            }
-        };
-
-        if (campaignId) {
-            fetchAdSets();
-        }
-
-    }, [campaignId, setAdSets]);
-
-    const handleStatusUpdate =
-        async (id, status) => {
-
-            try {
-
-                setUpdatingId(id);
-
-                const token =
-                    localStorage.getItem("token");
-
-                const res = await fetch(
-                    `${API_BASE_URL}/api/meta-ads/adsets/${id}/status`,
-                    {
-                        method: "PATCH",
-
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`,
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body: JSON.stringify({
-                            status
-                        })
-                    }
-                );
-
-                if (!res.ok)
-                    throw new Error();
-
-                setAdSets((prev) =>
-                    prev.map((item) =>
-                        item.id === id
-                            ? {
-                                ...item,
-                                status
-                            }
-                            : item
-                    )
-                );
-
-                toast.success(
-                    "Ad Set status updated"
-                );
-
-            } catch (error) {
-
-                toast.error(
-                    "Failed to update status"
-                );
-
-            } finally {
-
-                setUpdatingId(null);
-
-            }
-        };
+    const handleStatusUpdate = async (id, status) => {
+        setUpdatingId(id);
+        const applied = await changeStatus(`/api/meta-ads/adsets/${id}/status`, status);
+        if (applied) setAdSets((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+        setUpdatingId(null);
+    };
 
     const columns = [
 
@@ -237,8 +121,13 @@ const AdSetsTable = ({
         },
 
         {
-            accessorKey: "budget",
-            header: () => "Budget"
+            accessorKey: "budgetMinor",
+            header: () => "Budget",
+            cell: (info) => {
+                const r = info.row.original;
+                if (!r.budgetMinor) return "—";
+                return `${formatMinor(r.budgetMinor, currency)} ${r.budgetKind === "daily" ? "/ day" : "lifetime"}`;
+            }
         },
 
         {
@@ -356,10 +245,19 @@ const AdSetsTable = ({
         return <Loader />;
 
     return (
-        <Table
-            data={adSets}
-            columns={columns}
-        />
+        <>
+            <Table
+                data={adSets}
+                columns={columns}
+            />
+            {hasMore && (
+                <div className="text-center my-3">
+                    <button type="button" className="btn btn-light-brand" disabled={loadingMore} onClick={loadMore}>
+                        {loadingMore ? "Loading..." : "Load more ad sets"}
+                    </button>
+                </div>
+            )}
+        </>
     );
 };
 

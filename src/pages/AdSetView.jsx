@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import PageHeader from "@/components/shared/pageHeader/PageHeader";
 import Footer from '@/components/shared/Footer'
 import { API_BASE_URL } from '../config/api';
+import { useAdCurrency, formatMinor } from '@/components/meta/adsApi';
 
 const AdSetView = () => {
+    const { currency } = useAdCurrency();
     const { id } = useParams()
     const adSetId = id;
     const navigate = useNavigate()
@@ -239,13 +241,7 @@ const AdSetView = () => {
                                             </small>
 
                                             <h6 className="mt-2 mb-0">
-                                                {adSet?.daily_budget
-                                                    ? `₹${(
-                                                        Number(
-                                                            adSet.daily_budget
-                                                        ) / 100
-                                                    ).toLocaleString('en-IN')}`
-                                                    : '-'}
+                                                {adSet?.daily_budget ? formatMinor(adSet.daily_budget, currency) : '-'}
                                             </h6>
                                         </div>
                                     </div>
@@ -257,13 +253,7 @@ const AdSetView = () => {
                                             </small>
 
                                             <h6 className="mt-2 mb-0">
-                                                {adSet?.lifetime_budget
-                                                    ? `₹${(
-                                                        Number(
-                                                            adSet.lifetime_budget
-                                                        ) / 100
-                                                    ).toLocaleString('en-IN')}`
-                                                    : '-'}
+                                                {adSet?.lifetime_budget ? formatMinor(adSet.lifetime_budget, currency) : '-'}
                                             </h6>
                                         </div>
                                     </div>

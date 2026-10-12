@@ -199,8 +199,7 @@ export const menuList = [
         name: "Meta",
         path: "#",
         icon: "feather-facebook",
-        permissionKey: "social",
-        permissionAction: "view",
+        // no parent key: shown when any entry below is allowed (social.* or ads.view)
         dropdownMenu: [{
                 id: 501,
                 name: "Posts",
@@ -246,8 +245,50 @@ export const menuList = [
                 name: "Campaigns",
                 path: "/meta-ads/campaigns",
                 subdropdownMenu: false,
-                permissionKey: "teams",
+                permissionKey: "ads",
                 permissionAction: "view",
+            },
+            {
+                id: 510,
+                name: "Ads Insights",
+                path: "/meta-ads/insights",
+                subdropdownMenu: false,
+                permissionKey: "ads",
+                permissionAction: "view",
+            },
+            {
+                id: 511,
+                name: "Ad Change Log",
+                path: "/meta-ads/changes",
+                subdropdownMenu: false,
+                permissionKey: "ads",
+                permissionAction: "view",
+            },
+        ]
+    },
+    {
+        id: 17,
+        name: "Reports",
+        path: "#",
+        icon: "feather-file-text",
+        permissionKey: "reports",
+        permissionAction: "view",
+        dropdownMenu: [
+            {
+                id: 701,
+                name: "Client Reports",
+                path: "/reports",
+                subdropdownMenu: false,
+                permissionKey: "reports",
+                permissionAction: "view",
+            },
+            {
+                id: 702,
+                name: "New Report",
+                path: "/reports/new",
+                subdropdownMenu: false,
+                permissionKey: "reports",
+                permissionAction: "create",
             },
         ]
     },

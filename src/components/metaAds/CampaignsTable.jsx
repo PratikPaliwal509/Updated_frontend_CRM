@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Table from "@/components/shared/table/Table";
 import Dropdown from "@/components/shared/Dropdown";
 import Loader from "../loader";
@@ -12,8 +12,7 @@ import {
 } from "react-icons/fi";
 
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { API_BASE_URL } from '../../config/api';
+import { usePagedList, changeStatus } from "../meta/adsApi";
 
 const CampaignsTable = ({
     campaigns,
@@ -22,144 +21,28 @@ const CampaignsTable = ({
 
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState(null);
 
-    useEffect(() => {
+    // first page + "Load more" (Meta cursor paging, F-086)
+    const { loading, loadingMore, hasMore, loadMore } = usePagedList({
+        path: "/api/meta-ads/campaigns",
+        setRows: setCampaigns,
+        map: (campaign) => ({
+            id: campaign.id,
+            name: campaign.name,
+            objective: campaign.objective || "—",
+            status: campaign.status || "UNKNOWN",
+            createdAt: campaign.created_time ? new Date(campaign.created_time).toLocaleDateString() : "—"
+        })
+    });
 
-        const fetchCampaigns = async () => {
-
-            try {
-
-                const token = localStorage.getItem("token");
-
-                const res = await fetch(
-                    `${API_BASE_URL}/api/meta-ads/campaigns`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json"
-                        }
-                    }
-                );
-
-                const result = await res.json();
-
-                if (result.success) {
-
-                    const list =
-                        result.data?.data ||
-                        result.data ||
-                        [];
-
-                    const mapped = list.map((campaign) => ({
-                        id: campaign.id,
-                        name: campaign.name,
-                        objective:
-                            campaign.objective || "—",
-                        status:
-                            campaign.status || "UNKNOWN",
-                        createdAt:
-                            campaign.created_time
-                                ? new Date(
-                                    campaign.created_time
-                                ).toLocaleDateString()
-                                : "—"
-                    }));
-
-                    setCampaigns(mapped);
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Failed to fetch campaigns",
-                    error
-                );
-
-                toast.error(
-                    "Failed to fetch campaigns"
-                );
-
-            } finally {
-
-                setLoading(false);
-
-            }
-        };
-
-        fetchCampaigns();
-
-    }, [setCampaigns]);
-
-    const handleStatusUpdate = async (
-        campaignId,
-        status
-    ) => {
-
-        const confirmUpdate = window.confirm(
-            `Are you sure you want to change campaign status to ${status}?`
-        );
-
-        if (!confirmUpdate) return;
-
-        try {
-
-            setUpdatingId(campaignId);
-
-            const token =
-                localStorage.getItem("token");
-
-            const res = await fetch(
-                `${API_BASE_URL}/api/meta-ads/campaigns/${campaignId}/status`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`,
-                        "Content-Type":
-                            "application/json"
-                    },
-                    body: JSON.stringify({
-                        status
-                    })
-                }
-            );
-
-            if (!res.ok) {
-                throw new Error(
-                    "Status update failed"
-                );
-            }
-
-            setCampaigns((prev) =>
-                prev.map((campaign) =>
-                    campaign.id === campaignId
-                        ? {
-                            ...campaign,
-                            status
-                        }
-                        : campaign
-                )
-            );
-
-            toast.success(
-                "Campaign status updated successfully"
-            );
-
-        } catch (error) {
-
-            console.error(error);
-
-            toast.error(
-                "Failed to update campaign status"
-            );
-
-        } finally {
-
-            setUpdatingId(null);
-
-        }
+    const handleStatusUpdate = async (campaignId, status) => {
+        if (!window.confirm(`Are you sure you want to change campaign status to ${status}?`)) return;
+        setUpdatingId(campaignId);
+        const applied = await changeStatus(`/api/meta-ads/campaigns/${campaignId}/status`, status);
+        // "sent for approval" keeps the old status until an approver applies it
+        if (applied) setCampaigns((prev) => prev.map((c) => (c.id === campaignId ? { ...c, status } : c)));
+        setUpdatingId(null);
     };
 
     const StatusCell = ({ row }) => {
@@ -385,10 +268,19 @@ const CampaignsTable = ({
     }
 
     return (
-        <Table
-            data={campaigns}
-            columns={columns}
-        />
+        <>
+            <Table
+                data={campaigns}
+                columns={columns}
+            />
+            {hasMore && (
+                <div className="text-center my-3">
+                    <button type="button" className="btn btn-light-brand" disabled={loadingMore} onClick={loadMore} data-testid="load-more-campaigns">
+                        {loadingMore ? "Loading..." : "Load more campaigns"}
+                    </button>
+                </div>
+            )}
+        </>
     );
 };
 

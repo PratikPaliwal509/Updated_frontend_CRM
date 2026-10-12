@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     useNavigate,
     useParams
 } from "react-router-dom";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from '../../config/api';
+import usePages from '../meta/usePages';
+import { useAdCurrency, toMajor, reportWrite } from '../meta/adsApi';
+import CreativeBuilder from './CreativeBuilder';
 
 const API_URL = `${API_BASE_URL}`;
 
@@ -15,6 +18,19 @@ const MetaAdForm = ({
 }) => {
 
     const navigate = useNavigate();
+    const { currency } = useAdCurrency();
+    const creativeRef = useRef(null);
+    // the ad's Facebook Page: one of the workspace's connected Pages (never a server-wide setting)
+    const { pages, selected: selectedPage, setSelected: setSelectedPage } = usePages();
+    const pageSelect = (
+        <div className="col-md-6">
+            <label className="form-label fw-semibold">Facebook Page</label>
+            <select className="form-select" value={selectedPage || ""} onChange={(e) => setSelectedPage(e.target.value)} data-testid="ad-page-picker">
+                {!pages.length && <option value="">No connected Page - connect one in Settings → Integrations</option>}
+                {pages.map((p) => <option key={p.meta_page_id} value={p.meta_page_id}>{p.name}</option>)}
+            </select>
+        </div>
+    );
 
     const {
         campaignId,
@@ -42,9 +58,10 @@ const MetaAdForm = ({
             "",
 
         // Ad Set
+        // budgets / bids are typed in the ad account currency (major units); Meta's stored
+        // minor-unit values are converted once the currency is known (effect below)
         dailyBudget:
             initialData.dailyBudget ||
-            initialData.daily_budget ||
             "",
 
         optimizationGoal:
@@ -63,8 +80,7 @@ const MetaAdForm = ({
             "LOWEST_COST_WITHOUT_CAP",
 
         bidAmount:
-            initialData.bidAmount ||
-            initialData.bid_amount ||
+            initialData.bidAmountMajor ||
             "",
         ageMin:
             initialData.ageMin ||
@@ -118,6 +134,17 @@ const MetaAdForm = ({
             null
     });
 
+    // edit: Meta returns budgets / bids in the currency's minor unit -> show major units
+    useEffect(() => {
+        if (!currency) return;
+        setForm((f) => ({
+            ...f,
+            dailyBudget: f.dailyBudget || (initialData.daily_budget ? String(toMajor(initialData.daily_budget, currency)) : ""),
+            bidAmount: f.bidAmount || (initialData.bid_amount ? String(toMajor(initialData.bid_amount, currency)) : ""),
+        }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currency, initialData.daily_budget, initialData.bid_amount]);
+
     const [loading, setLoading] =
         useState(false);
 
@@ -149,158 +176,6 @@ const MetaAdForm = ({
             ...prev,
             [name]: value
         }));
-    };
-
-    // =========================================
-    // CREATE IMAGE
-    // =========================================
-
-    const createImage = async (token) => {
-
-        if (!form.image) {
-
-            throw new Error(
-                "Please select an image"
-            );
-        }
-
-        const formData =
-            new FormData();
-
-        formData.append(
-            "image",
-            form.image
-        );
-
-        const res = await fetch(
-            `${API_URL}/api/meta-ads/images`,
-            {
-                method: "POST",
-
-                headers: {
-                    Authorization:
-                        `Bearer ${token}`
-                },
-
-                body: formData
-            }
-        );
-
-        const result =
-            await res.json();
-
-        console.log(
-            "IMAGE RESPONSE:",
-            result
-        );
-
-        if (!res.ok) {
-
-            throw new Error(
-                result.message ||
-                "Image upload failed"
-            );
-        }
-
-        const images =
-            result.data?.images;
-
-        const imageHash =
-            images
-                ? Object.values(images)[0]?.hash
-                : null;
-
-        if (!imageHash) {
-
-            throw new Error(
-                "Image uploaded but imageHash was not returned"
-            );
-        }
-
-        return imageHash;
-    };
-
-    // =========================================
-    // CREATE CREATIVE
-    // =========================================
-
-    const createCreative = async (
-        token,
-        imageHash
-    ) => {
-
-        const creativeData = {
-
-            name:
-                form.creativeName ||
-                `${form.name} Creative`,
-
-            message:
-                form.message,
-
-            imageHash:
-                imageHash,
-
-            link:
-                form.link
-        };
-
-        console.log(
-            "CREATIVE REQUEST:",
-            creativeData
-        );
-
-        const res = await fetch(
-            `${API_URL}/api/meta-ads/creatives`,
-            {
-                method: "POST",
-
-                headers: {
-
-                    Authorization:
-                        `Bearer ${token}`,
-
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body:
-                    JSON.stringify(
-                        creativeData
-                    )
-            }
-        );
-
-        const result =
-            await res.json();
-
-        console.log(
-            "CREATIVE RESPONSE:",
-            result
-        );
-
-        if (!res.ok) {
-
-            throw new Error(
-                result.message ||
-                "Creative creation failed"
-            );
-        }
-
-        const creativeId =
-            result.data?.id ||
-            result.data?.creativeId ||
-            result.creativeId ||
-            result.id;
-
-        if (!creativeId) {
-
-            throw new Error(
-                "Creative created but creativeId was not returned"
-            );
-        }
-
-        return creativeId;
     };
 
     // =========================================
@@ -338,10 +213,6 @@ const MetaAdForm = ({
                 form.status
         };
 
-        console.log(
-            "AD REQUEST:",
-            adData
-        );
 
         const res = await fetch(
             `${API_URL}/api/meta-ads/ads`,
@@ -367,10 +238,6 @@ const MetaAdForm = ({
         const result =
             await res.json();
 
-        console.log(
-            "AD RESPONSE:",
-            result
-        );
 
         if (!res.ok) {
 
@@ -406,10 +273,6 @@ const MetaAdForm = ({
 
         };
 
-        console.log(
-            "UPDATE AD REQUEST:",
-            adData
-        );
 
         const res = await fetch(
             `${API_URL}/api/meta-ads/ads/${editId}`,
@@ -435,10 +298,6 @@ const MetaAdForm = ({
         const result =
             await res.json();
 
-        console.log(
-            "UPDATE AD RESPONSE:",
-            result
-        );
 
         if (!res.ok) {
 
@@ -510,34 +369,13 @@ const MetaAdForm = ({
                     return;
                 }
 
-                // STEP 1
+                // STEP 1 + 2: upload media and create the creative (any format)
                 toast.info(
-                    "Uploading image..."
-                );
-
-                const imageHash =
-                    await createImage(token);
-
-                console.log(
-                    "IMAGE HASH:",
-                    imageHash
-                );
-
-                // STEP 2
-                toast.info(
-                    "Creating creative..."
+                    "Uploading media and creating the creative..."
                 );
 
                 const creativeId =
-                    await createCreative(
-                        token,
-                        imageHash
-                    );
-
-                console.log(
-                    "CREATIVE ID:",
-                    creativeId
-                );
+                    await creativeRef.current.build({ name: form.creativeName || `${form.name} Creative` });
 
                 // STEP 3
                 toast.info(
@@ -619,10 +457,9 @@ const MetaAdForm = ({
                     name:
                         form.name,
 
+                    // major units of the ad account currency; the server converts for Meta
                     dailyBudget:
-                        Number(
-                            form.dailyBudget
-                        ),
+                        form.dailyBudget,
 
                     billingEvent:
                         form.billingEvent,
@@ -635,7 +472,7 @@ const MetaAdForm = ({
 
                     bidAmount:
                         form.bidAmount
-                            ? Number(form.bidAmount)
+                            ? form.bidAmount
                             : undefined,
 
                     targeting: {
@@ -693,7 +530,10 @@ const MetaAdForm = ({
                         form.imageHash,
 
                     link:
-                        form.link
+                        form.link,
+
+                    page_id:
+                        selectedPage || undefined
                 };
             }
 
@@ -708,15 +548,6 @@ const MetaAdForm = ({
                 editId
                     ? "PUT"
                     : "POST";
-
-            console.log(
-                "REQUEST:",
-                {
-                    method,
-                    endpoint,
-                    requestData
-                }
-            );
 
             const res = await fetch(
                 `${API_URL}${endpoint}`,
@@ -743,11 +574,6 @@ const MetaAdForm = ({
             const result =
                 await res.json();
 
-            console.log(
-                "API RESPONSE:",
-                result
-            );
-
             if (!res.ok) {
 
                 throw new Error(
@@ -756,11 +582,8 @@ const MetaAdForm = ({
                 );
             }
 
-            toast.success(
-                editId
-                    ? "Updated successfully"
-                    : "Created successfully"
-            );
+            // 202 = sent for approval (workspace approval workflow)
+            reportWrite(result, editId ? "Updated successfully" : "Created successfully");
 
             navigate(-1);
 
@@ -931,127 +754,25 @@ const MetaAdForm = ({
                                     Creative
                                 </h6>
 
-                                <div className="row g-4">
-
-                                    {/* CREATIVE NAME */}
-
+                                <div className="row g-4 mb-3">
+                                    {pageSelect}
                                     <div className="col-md-6">
-
                                         <label className="form-label fw-semibold">
                                             Creative Name
                                         </label>
-
                                         <input
                                             type="text"
                                             name="creativeName"
-                                            value={
-                                                form.creativeName
-                                            }
+                                            value={form.creativeName}
                                             onChange={handleChange}
                                             className="form-control"
-                                            placeholder="TLS Test Creative"
-                                            required
+                                            placeholder="Autumn creative"
                                         />
-
                                     </div>
-
-                                    {/* WEBSITE */}
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label fw-semibold">
-                                            Website Link
-                                        </label>
-
-                                        <input
-                                            type="url"
-                                            name="link"
-                                            value={form.link}
-                                            onChange={handleChange}
-                                            className="form-control"
-                                            placeholder="https://techleela.com"
-                                            required
-                                        />
-
-                                    </div>
-
-                                    {/* MESSAGE */}
-
-                                    <div className="col-md-12">
-
-                                        <label className="form-label fw-semibold">
-                                            Message
-                                        </label>
-
-                                        <textarea
-                                            name="message"
-                                            value={form.message}
-                                            onChange={handleChange}
-                                            className="form-control"
-                                            rows="4"
-                                            placeholder="Discover our services. Contact us today."
-                                            required
-                                        />
-
-                                    </div>
-
-                                    {/* IMAGE */}
-
-                                    <div className="col-md-12">
-
-                                        <label className="form-label fw-semibold">
-                                            Image
-                                        </label>
-
-                                        <input
-                                            type="file"
-                                            name="image"
-                                            accept="image/*"
-                                            onChange={handleChange}
-                                            className="form-control"
-                                            required
-                                        />
-
-                                        <small className="text-muted">
-                                            Image will be uploaded first,
-                                            then used to create the creative.
-                                        </small>
-
-                                    </div>
-
                                 </div>
 
-                                <div className="alert alert-light border mt-4 mb-0">
-
-                                    <strong>
-                                        Creation flow:
-                                    </strong>
-
-                                    <div className="mt-2">
-
-                                        <span>
-                                            1. Upload Image
-                                        </span>
-
-                                        <span className="mx-2">
-                                            →
-                                        </span>
-
-                                        <span>
-                                            2. Create Creative
-                                        </span>
-
-                                        <span className="mx-2">
-                                            →
-                                        </span>
-
-                                        <span>
-                                            3. Create Ad
-                                        </span>
-
-                                    </div>
-
-                                </div>
+                                {/* image, video, carousel or lead form (F-089) */}
+                                <CreativeBuilder ref={creativeRef} pageId={selectedPage} hideName />
 
                             </>
 
@@ -1155,7 +876,7 @@ const MetaAdForm = ({
                         <div className="col-md-6">
 
                             <label className="form-label fw-semibold">
-                                Daily Budget
+                                Daily Budget{currency ? ` (${currency})` : ""}
                             </label>
 
                             <input
@@ -1164,7 +885,8 @@ const MetaAdForm = ({
                                 value={form.dailyBudget}
                                 onChange={handleChange}
                                 className="form-control"
-                                min="1"
+                                min="0.01"
+                                step="0.01"
                                 required
                             />
 
@@ -1251,7 +973,7 @@ const MetaAdForm = ({
                         <div className="col-md-6">
 
                             <label className="form-label fw-semibold">
-                                Bid Amount
+                                Bid Amount{currency ? ` (${currency})` : ""}
                             </label>
 
                             <input
@@ -1348,6 +1070,8 @@ const MetaAdForm = ({
                 {type === "creative" && (
 
                     <div className="row g-4">
+
+                        {!editId && pageSelect}
 
                         <div className="col-md-6">
 

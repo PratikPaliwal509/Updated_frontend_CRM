@@ -1,8 +1,5 @@
 
-import React, {
-    useEffect,
-    useState
-} from "react";
+import React from "react";
 
 import Table from "@/components/shared/table/Table";
 import Dropdown from "@/components/shared/Dropdown";
@@ -19,173 +16,28 @@ import {
     useNavigate
 } from "react-router-dom";
 
-import {
-    toast
-} from "react-toastify";
-import { API_BASE_URL } from '../../config/api';
+import { usePagedList, changeStatus } from "../meta/adsApi";
 
 const AdsTable = ({
     adSetId,
     ads,
     setAds
 }) => {
-console.log("Rendering AdsTable component with adSetId:", adSetId);
     const navigate = useNavigate();
 
-    const [loading, setLoading] =
-        useState(true);
-
-    useEffect(() => {
-
-        const fetchAds = async () => {
-
-            console.log(
-                "Fetching ads for adSetId:",
-                adSetId
-            );
-
-            try {
-
-                const token =
-                    localStorage.getItem("token");
-
-                const url =
-                    `${API_BASE_URL}/api/meta-ads/adsets/${adSetId}/ads`;
-
-                console.log(
-                    "Ads API URL:",
-                    url
-                );
-
-                const res = await fetch(
-                    url,
-                    {
-                        method: "GET",
-
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`,
-
-                            "Content-Type":
-                                "application/json"
-                        }
-                    }
-                );
-
-                console.log(
-                    "Ads API status:",
-                    res.status
-                );
-
-                const result =
-                    await res.json();
-
-                console.log(
-                    "Ads API response:",
-                    result
-                );
-
-                if (!res.ok) {
-                    throw new Error(
-                        result?.message ||
-                        "Failed to fetch ads"
-                    );
-                }
-
-                if (result.success) {
-
-                    /*
-                     * Backend response:
-                     *
-                     * {
-                     *   success: true,
-                     *   data: [...]
-                     * }
-                     */
-
-                    const list =
-                        Array.isArray(result.data)
-                            ? result.data
-                            : result.data?.data || [];
-
-                    console.log(
-                        "Ads list:",
-                        list
-                    );
-
-                    const mapped =
-                        list.map((ad) => ({
-                            id: ad.id,
-
-                            name:
-                                ad.name ||
-                                "Unnamed Ad",
-
-                            creative:
-                                ad.creative?.id ||
-                                "—",
-
-                            status:
-                                ad.status ||
-                                "UNKNOWN",
-
-                            createdAt:
-                                ad.created_time
-                                    ? new Date(
-                                        ad.created_time
-                                    ).toLocaleDateString()
-                                    : "—"
-                        }));
-
-                    console.log(
-                        "Mapped ads:",
-                        mapped
-                    );
-
-                    setAds(mapped);
-
-                } else {
-
-                    setAds([]);
-
-                    toast.error(
-                        result?.message ||
-                        "Failed to fetch ads"
-                    );
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Fetch Ads Error:",
-                    error
-                );
-
-                toast.error(
-                    error.message ||
-                    "Failed to fetch ads"
-                );
-
-                setAds([]);
-
-            } finally {
-
-                console.log(
-                    "Finished loading ads"
-                );
-
-                setLoading(false);
-            }
-        };
-
-        if (adSetId) {
-            fetchAds();
-        } else {
-            setLoading(false);
-        }
-
-    }, [adSetId, setAds]);
-
+    // first page + "Load more" (Meta cursor paging, F-086)
+    const { loading, loadingMore, hasMore, loadMore } = usePagedList({
+        path: `/api/meta-ads/adsets/${adSetId}/ads`,
+        enabled: !!adSetId,
+        setRows: setAds,
+        map: (ad) => ({
+            id: ad.id,
+            name: ad.name || "Unnamed Ad",
+            creative: ad.creative?.id || "—",
+            status: ad.status || "UNKNOWN",
+            createdAt: ad.created_time ? new Date(ad.created_time).toLocaleDateString() : "—"
+        })
+    });
 
     const columns = [
 
@@ -283,79 +135,9 @@ console.log("Rendering AdsTable component with adSetId:", adSetId);
                         className="form-select"
                         value={row.status}
                         onChange={async (e) => {
-
-                            const status =
-                                e.target.value;
-
-                            try {
-
-                                const token =
-                                    localStorage.getItem(
-                                        "token"
-                                    );
-
-                                const res =
-                                    await fetch(
-                                        `${API_BASE_URL}/api/meta-ads/ads/${row.id}/status`,
-                                        {
-                                            method:
-                                                "PATCH",
-
-                                            headers: {
-                                                Authorization:
-                                                    `Bearer ${token}`,
-
-                                                "Content-Type":
-                                                    "application/json"
-                                            },
-
-                                            body:
-                                                JSON.stringify({
-                                                    status
-                                                })
-                                        }
-                                    );
-
-                                const result =
-                                    await res.json();
-
-                                if (!res.ok) {
-                                    throw new Error(
-                                        result?.message ||
-                                        "Failed to update status"
-                                    );
-                                }
-
-                                setAds((prev) =>
-                                    prev.map(
-                                        (item) =>
-                                            item.id ===
-                                            row.id
-                                                ? {
-                                                    ...item,
-                                                    status
-                                                }
-                                                : item
-                                    )
-                                );
-
-                                toast.success(
-                                    "Ad status updated"
-                                );
-
-                            } catch (error) {
-
-                                console.error(
-                                    "Status update error:",
-                                    error
-                                );
-
-                                toast.error(
-                                    error.message ||
-                                    "Failed to update status"
-                                );
-                            }
-
+                            const status = e.target.value;
+                            const applied = await changeStatus(`/api/meta-ads/ads/${row.id}/status`, status);
+                            if (applied) setAds((prev) => prev.map((item) => (item.id === row.id ? { ...item, status } : item)));
                         }}
                     >
 
@@ -456,10 +238,19 @@ console.log("Rendering AdsTable component with adSetId:", adSetId);
 
 
     return (
-        <Table
-            data={ads || []}
-            columns={columns}
-        />
+        <>
+            <Table
+                data={ads || []}
+                columns={columns}
+            />
+            {hasMore && (
+                <div className="text-center my-3">
+                    <button type="button" className="btn btn-light-brand" disabled={loadingMore} onClick={loadMore}>
+                        {loadingMore ? "Loading..." : "Load more ads"}
+                    </button>
+                </div>
+            )}
+        </>
     );
 };
 

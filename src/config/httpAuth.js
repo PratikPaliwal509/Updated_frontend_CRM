@@ -15,6 +15,12 @@ import { API_BASE_URL } from './api';
 const isApiUrl = (url) => typeof url === 'string' && url.startsWith(API_BASE_URL);
 const needsCookies = (url) => isApiUrl(url) && /\/api\/(auth\/|invitations\/accept)/.test(url);
 const isRefreshUrl = (url) => isApiUrl(url) && url.includes('/api/auth/refresh');
+// Meta Ads screens: the ad account chosen in the picker (our row id, never a token) goes with every ads call
+export const AD_ACCOUNT_KEY = 'tl_meta_ad_account';
+const isAdsUrl = (url) => isApiUrl(url) && /\/api\/(meta-ads|facebook\/campaigns)(\/|\?|$)/.test(url);
+const chosenAdAccount = () => {
+  try { const v = window.localStorage.getItem(AD_ACCOUNT_KEY); return v && /^\d{1,9}$/.test(v) ? v : null; } catch { return null; }
+};
 
 const store = {
   get token() {
@@ -111,6 +117,7 @@ export const installAuthInterceptors = () => {
     const url = typeof input === 'string' ? input : input && input.url;
     const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
     if (token && isApiUrl(url) && !isRefreshUrl(url)) headers.set('Authorization', `Bearer ${token}`);
+    if (isAdsUrl(url) && !headers.has('X-Meta-Ad-Account') && chosenAdAccount()) headers.set('X-Meta-Ad-Account', chosenAdAccount());
     return { ...init, headers, ...(needsCookies(url) ? { credentials: 'include' } : {}) };
   };
 
@@ -144,6 +151,7 @@ export const installAuthInterceptors = () => {
       const token = store.token;
       config.headers = config.headers || {};
       if (token) config.headers.Authorization = `Bearer ${token}`;
+      if (isAdsUrl(url) && chosenAdAccount() && !(config.headers['X-Meta-Ad-Account'] || config.headers['x-meta-ad-account'])) config.headers['X-Meta-Ad-Account'] = chosenAdAccount();
       if (needsCookies(url)) config.withCredentials = true;
     }
     return config;

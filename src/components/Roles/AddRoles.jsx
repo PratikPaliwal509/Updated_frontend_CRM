@@ -57,6 +57,9 @@ const permissionPages = [
 
     { key: 'roles', label: 'Roles', actions: ['view', 'create', 'edit', 'delete'] },
     { key: 'social', label: 'Facebook (posts, comments, inbox, lead forms)', actions: ['view', 'create', 'edit', 'delete'] },
+    { key: 'ads', label: 'Meta Ads (ad accounts, campaigns, ad sets, ads, insights; approve = apply spend changes when approval is on)', actions: ['view', 'create', 'edit', 'delete', 'approve'] },
+    { key: 'reports', label: 'Reports (client reports, PDFs, schedules, share links)', actions: ['view', 'create', 'edit', 'delete'] },
+    { key: 'integrations', label: 'Integrations (connect Facebook, choose Pages / ad accounts)', actions: ['view', 'edit'] },
 ];
 
 /* ============================
