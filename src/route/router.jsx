@@ -115,6 +115,10 @@ import ReportsPage from "../pages/reports/ReportsPage";
 import ReportBuilderPage from "../pages/reports/ReportBuilderPage";
 import ReportRunPage from "../pages/reports/ReportRunPage";
 import SharedReportPage from "../pages/reports/SharedReportPage";
+import ChatbotWebsitesPage from "../pages/chatbot/ChatbotWebsitesPage";
+import ChatbotWebsitePage from "../pages/chatbot/ChatbotWebsitePage";
+import WebChatInboxPage from "../pages/chatbot/WebChatInboxPage";
+import AiSettingsPage from "../pages/ai/AiSettingsPage";
 import MetaCallbackPage from "../pages/meta/MetaCallbackPage";
 import DataDeletionStatusPage from "../pages/meta/DataDeletionStatusPage";
 import MetaFormLeads from "../pages/metaFormLeads";
@@ -425,6 +429,18 @@ export const router = createBrowserRouter([
                 element: <ReportRunPage />
             },
             {
+                path: "/chatbot/websites",
+                element: <ChatbotWebsitesPage />
+            },
+            {
+                path: "/chatbot/websites/:id",
+                element: <ChatbotWebsitePage />
+            },
+            {
+                path: "/chatbot/inbox",
+                element: <WebChatInboxPage />
+            },
+            {
                 path: "/meta-ads/insights",
                 element: <AdsInsightsPage />
             },
@@ -564,6 +580,10 @@ export const router = createBrowserRouter([
             {
                 path: "/settings/integrations",
                 element: <IntegrationsPage />
+            },
+            {
+                path: "/settings/ai",
+                element: <AiSettingsPage />
             },
             {
                 path: "/settings/integrations/meta/callback",

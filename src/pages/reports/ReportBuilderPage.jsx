@@ -198,6 +198,7 @@ const ReportBuilderPage = () => {
                                 <div className="col-12">
                                     <label className="form-check"><input type="checkbox" className="form-check-input" checked={form.branding.show_agency_logo !== false} onChange={(e) => setBrand({ show_agency_logo: e.target.checked })} /><span className="form-check-label">Agency logo</span></label>
                                     <label className="form-check"><input type="checkbox" className="form-check-input" checked={form.branding.show_client_logo !== false} onChange={(e) => setBrand({ show_client_logo: e.target.checked })} /><span className="form-check-label">Client logo</span></label>
+                                    <label className="form-check"><input type="checkbox" className="form-check-input" checked={form.branding.ai_summary === true} onChange={(e) => setBrand({ ai_summary: e.target.checked })} data-testid="rb-ai-summary" /><span className="form-check-label">Start with an AI executive summary (uses AI credit)</span></label>
                                 </div>
                             </div>
                         </div>

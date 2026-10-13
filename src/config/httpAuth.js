@@ -12,7 +12,9 @@
 import axios from 'axios';
 import { API_BASE_URL } from './api';
 
-const isApiUrl = (url) => typeof url === 'string' && url.startsWith(API_BASE_URL);
+// the website chat widget's public API (previewed inside the CRM) must never carry the staff token
+const isWidgetUrl = (url) => typeof url === 'string' && url.startsWith(`${API_BASE_URL}/api/chatbot/public/`);
+const isApiUrl = (url) => typeof url === 'string' && url.startsWith(API_BASE_URL) && !isWidgetUrl(url);
 const needsCookies = (url) => isApiUrl(url) && /\/api\/(auth\/|invitations\/accept)/.test(url);
 const isRefreshUrl = (url) => isApiUrl(url) && url.includes('/api/auth/refresh');
 // Meta Ads screens: the ad account chosen in the picker (our row id, never a token) goes with every ads call

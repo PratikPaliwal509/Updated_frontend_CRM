@@ -7,6 +7,7 @@ import PageHeader from '@/components/shared/pageHeader/PageHeader'
 import Footer from '@/components/shared/Footer'
 import { adsApi } from '@/components/meta/adsApi'
 import ReportSections, { exportRunExcel } from '@/components/reports/ReportSections'
+import AiSummaryCard from '@/components/reports/AiSummaryCard'
 import { RUN_STATUS } from './ReportsPage'
 import { API_BASE_URL } from '../../config/api'
 
@@ -143,6 +144,7 @@ const ReportRunPage = () => {
                         {run.source_errors.map((e, i) => <div key={i} className="fs-13">{e.title}: {e.message}</div>)}
                     </div>
                 )}
+                {run.data && <AiSummaryCard run={run} onUpdated={load} />}
                 {run.data && <ReportSections sections={run.data.sections} color={color} />}
             </div>
             <Footer />

@@ -7,6 +7,7 @@ import Footer from '@/components/shared/Footer'
 import usePages from '@/components/meta/usePages'
 import { PagePicker, ConnectHint, metaErrorText } from '@/components/meta/PagePicker'
 import { api } from '@/utils/authSession'
+import AiWriter from '@/components/ai/AiWriter'
 
 const when = (d) => (d ? new Date(d).toLocaleString(undefined, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '')
 
@@ -116,10 +117,17 @@ const InboxPage = () => {
                                         ))}
                                     </div>
                                     {conv.can_reply ? (
-                                        <form className="p-3 border-top d-flex gap-2" onSubmit={send}>
+                                        <>
+                                        <div className="px-3 pt-2 border-top">
+                                            <AiWriter kind="reply" network="messenger" testId="ai-reply" label="Suggest a reply" key={active}
+                                                context={() => ({ thread: thread.data.filter((m) => m.message).map((m) => ({ from: m.from_page ? 'us' : 'customer', text: m.message })) })}
+                                                clientId={page?.client?.client_id} onUse={(v) => setText(v.text)} />
+                                        </div>
+                                        <form className="p-3 d-flex gap-2" onSubmit={send}>
                                             <input className="form-control" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} placeholder="Reply as the Page..." aria-label="Reply" />
                                             <button type="submit" className="btn btn-primary" disabled={!text.trim()}><FiSend /></button>
                                         </form>
+                                        </>
                                     ) : (
                                         <div className="p-3 border-top fs-13 text-muted"><FiClock className="me-1" />Facebook only allows replies within 24 hours of the customer's last message. You can answer when they write again.</div>
                                     )}

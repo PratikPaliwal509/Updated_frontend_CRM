@@ -8,7 +8,7 @@ import { API_BASE_URL } from '../../config/api'
 import { money, fmtDate, StatusBadge, Empty, Loading, label } from '@/components/clientMgmt/common'
 
 export const STAGES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost']
-export const SOURCES = ['manual', 'website', 'referral', 'meta_form', 'email', 'phone', 'event', 'other']
+export const SOURCES = ['manual', 'website', 'website_chat', 'referral', 'meta_form', 'email', 'phone', 'event', 'other']
 
 export const LeadForm = ({ value, users, onSubmit, onCancel, busy }) => {
     const [f, setF] = useState(value || { name: '', company_name: '', email: '', phone: '', source: 'manual', value: '', currency: '', owner_id: '', next_follow_up: '', notes: '' })

@@ -111,6 +111,13 @@ const permissionPages = [
     actions: ['view'],
   },
 
+  { key: 'social', label: 'Facebook (posts, comments, inbox, lead forms)', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'ads', label: 'Meta Ads (campaigns, ad sets, ads, insights; approve = apply spend changes)', actions: ['view', 'create', 'edit', 'delete', 'approve'] },
+  { key: 'reports', label: 'Reports (client reports, PDFs, schedules, share links)', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'chatbot', label: 'Website chatbot (websites, knowledge base, website chats)', actions: ['view', 'create', 'edit', 'delete'] },
+  { key: 'ai', label: 'AI (write with AI, AI summaries; edit = AI settings and brand voices)', actions: ['view', 'create', 'edit'] },
+  { key: 'integrations', label: 'Integrations (connect Facebook, choose Pages / ad accounts)', actions: ['view', 'edit'] },
+
   {
     key: 'authentication',
     label: 'Authentication',

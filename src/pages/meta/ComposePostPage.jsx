@@ -7,6 +7,7 @@ import Footer from '@/components/shared/Footer'
 import usePages from '@/components/meta/usePages'
 import { ConnectHint, metaErrorText } from '@/components/meta/PagePicker'
 import { api } from '@/utils/authSession'
+import AiWriter from '@/components/ai/AiWriter'
 
 const MAX_IMAGES = 10
 
@@ -113,7 +114,19 @@ const ComposePostPage = () => {
                                         {!loading && usable.length === 0 && <span className="text-muted fs-13">No usable Page - check Settings → Integrations.</span>}
                                     </div>
 
-                                    <label className="form-label fw-semibold" htmlFor="post-message">Text</label>
+                                    <div className="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+                                        <label className="form-label fw-semibold mb-0" htmlFor="post-message">Text</label>
+                                        <div className="d-flex gap-2">
+                                            <AiWriter kind="caption" network="facebook" testId="ai-caption" label="Write with AI"
+                                                networks={[['facebook', 'Facebook'], ['instagram', 'Instagram'], ['linkedin', 'LinkedIn'], ['x', 'X (Twitter)'], ['google_business', 'Google Business']]}
+                                                context={() => ({ current_text: message })} clientId={usable.find((p) => chosen.includes(p.meta_page_id) && p.client)?.client?.client_id}
+                                                onUse={(v) => setMessage(v.hashtags?.length ? `${v.text}\n\n${v.hashtags.join(' ')}` : v.text)} />
+                                            <AiWriter kind="hashtags" network="facebook" testId="ai-hashtags" label="Hashtags"
+                                                networks={[['facebook', 'Facebook'], ['instagram', 'Instagram'], ['linkedin', 'LinkedIn'], ['x', 'X (Twitter)']]}
+                                                context={() => ({ current_text: message })} clientId={usable.find((p) => chosen.includes(p.meta_page_id) && p.client)?.client?.client_id}
+                                                onUse={(v) => setMessage((m) => `${m.trim()}${m.trim() ? '\n\n' : ''}${v.hashtags.join(' ')}`)} />
+                                        </div>
+                                    </div>
                                     <textarea id="post-message" className="form-control mb-1" rows={6} value={message} maxLength={63206} onChange={(e) => setMessage(e.target.value)} placeholder="What do you want to share?" />
                                     <div className="fs-11 text-muted text-end mb-3">{message.length} characters</div>
 

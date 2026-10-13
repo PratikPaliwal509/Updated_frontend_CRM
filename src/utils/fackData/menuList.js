@@ -292,6 +292,32 @@ export const menuList = [
             },
         ]
     },
+    {
+        id: 18,
+        name: "Website Chat",
+        path: "#",
+        icon: "feather-message-square",
+        permissionKey: "chatbot",
+        permissionAction: "view",
+        dropdownMenu: [
+            {
+                id: 801,
+                name: "Website Chats",
+                path: "/chatbot/inbox",
+                subdropdownMenu: false,
+                permissionKey: "chatbot",
+                permissionAction: "view",
+            },
+            {
+                id: 802,
+                name: "Chatbots & Knowledge",
+                path: "/chatbot/websites",
+                subdropdownMenu: false,
+                permissionKey: "chatbot",
+                permissionAction: "view",
+            },
+        ]
+    },
      {
         id: 16,
         name: "SEO",
@@ -476,6 +502,14 @@ export const menuList = [
                 path: "/settings/integrations",
                 subdropdownMenu: false,
                 permissionKey: "settings",
+                permissionAction: "view",
+            },
+            {
+                id: 907,
+                name: "AI",
+                path: "/settings/ai",
+                subdropdownMenu: false,
+                permissionKey: "ai",
                 permissionAction: "view",
             },
             {

@@ -2,6 +2,7 @@ import React, { forwardRef, useEffect, useImperativeHandle, useState } from "rea
 import { FiImage, FiVideo, FiLayers, FiFileText, FiPlus, FiTrash2 } from "react-icons/fi";
 import { adsApi } from "../meta/adsApi";
 import { API_BASE_URL } from "../../config/api";
+import AiWriter from "@/components/ai/AiWriter";
 
 /**
  * Ad creative builder (F-089): single image, video, carousel (2-10 cards) or lead form.
@@ -133,7 +134,11 @@ const CreativeBuilder = forwardRef(({ pageId, defaultName = "", hideName = false
                 </select>
             </div>
             <div className="col-12">
-                <label className="form-label fw-semibold" htmlFor="cb-message">Ad text</label>
+                <div className="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+                    <label className="form-label fw-semibold mb-0" htmlFor="cb-message">Ad text</label>
+                    <AiWriter kind="ad_copy" network="meta_ads" testId="ai-adcopy" label="Write ad copy with AI" context={() => ({ current_text: message })}
+                        onUse={(v) => { setMessage(v.text); if (v.headline) setTitle(v.headline); if (format === "carousel" && v.description) setCards((prev) => prev.map((c) => (c.description ? c : { ...c, description: v.description.slice(0, 255) }))); }} />
+                </div>
                 <textarea id="cb-message" className="form-control" rows="3" maxLength={2200} value={message} onChange={(e) => setMessage(e.target.value)} />
             </div>
 
